@@ -1,0 +1,16 @@
+name: Мой первый Workflow
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Вывод приветствия
+        run: echo "Привет, мир! Это мой первый GitHub Action!"
+
+      - name: Кто запустил?
+        run: echo "Этот workflow запустил пользователь: ${{ github.actor }}"
