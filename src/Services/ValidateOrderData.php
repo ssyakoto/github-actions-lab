@@ -3,65 +3,55 @@ namespace Services;
 
 class ValidateOrderData
 {
-    private array $errors = [];
-    private array $sanitized = [];
-
     public function validate(array $data): array
     {
+        $errors = [];
+        $sanitized = [];
+
+        // 1. Проверка ФИО
         $fio = trim($data['fio'] ?? '');
-        $phone = trim($data['phone'] ?? '');
-        $type = $data['delivery_type'] ?? 'email';
-        $email = trim($data['email'] ?? '');
-        $address = trim($data['address'] ?? '');
-
-        $this->sanitized['fio'] = htmlspecialchars(strip_tags($fio), ENT_QUOTES, 'UTF-8');
-        $this->sanitized['address'] = htmlspecialchars(strip_tags($address), ENT_QUOTES, 'UTF-8');
-        $this->sanitized['phone'] = $this->sanitizePhone($phone);
-
-        // Валидация ФИО
-        if (empty($this->sanitized['fio']) || mb_strlen($this->sanitized['fio']) < 3) {
-            $this->errors[] = 'ФИО должно содержать минимум 3 символа';
-        }
-
-        // Валидация телефона
-        if (empty($this->sanitized['phone'])) {
-            $this->errors[] = 'Введите корректный номер телефона';
-        }
-
-        // Валидация в зависимости от типа доставки
-        if ($type === 'email') {
-            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $this->errors[] = 'Укажите корректный email для доставки';
-            }
-            $this->sanitized['email'] = filter_var($email, FILTER_SANITIZE_EMAIL);
-            $this->sanitized['address'] = null;
+        if (mb_strlen($fio) < 3) {
+            $errors[] = 'ФИО должно содержать минимум 3 символа';
         } else {
-            if (empty($this->sanitized['address']) || 
-                mb_strlen($this->sanitized['address']) < 10 || 
-                mb_strlen($this->sanitized['address']) > 200) {
-                $this->errors[] = 'Адрес должен содержать от 10 до 200 символов';
+            $sanitized['fio'] = htmlspecialchars(strip_tags($fio), ENT_QUOTES, 'UTF-8');
+        }
+
+        // 2. Санитизация телефона (оставляем только цифры и +, 8 меняем на +7, берем первые 11 цифр)
+        $rawPhone = trim($data['phone'] ?? '');
+        $digits = preg_replace('/\D/', '', $rawPhone);
+        
+        if (strlen($digits) >= 11) {
+            $digits = substr($digits, 0, 11);
+            if ($digits[0] === '8') {
+                $digits = '7' . substr($digits, 1);
             }
-            $this->sanitized['email'] = null;
+            $sanitized['phone'] = '+' . $digits;
+        } else {
+            $sanitized['phone'] = $rawPhone;
+        }
+
+        // 3. Тип доставки
+        $deliveryType = trim($data['delivery_type'] ?? 'email');
+        $sanitized['delivery_type'] = $deliveryType;
+
+        if ($deliveryType === 'email') {
+            $email = trim($data['email'] ?? '');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = 'Некорректный email';
+            }
+            $sanitized['email'] = filter_var($email, FILTER_SANITIZE_EMAIL);
+        } else {
+            $address = trim($data['address'] ?? '');
+            if (mb_strlen($address) < 10 || mb_strlen($address) > 200) {
+                $errors[] = 'Адрес должен содержать от 10 до 200 символов';
+            }
+            $sanitized['address'] = htmlspecialchars(strip_tags($address), ENT_QUOTES, 'UTF-8');
         }
 
         return [
-            'valid' => empty($this->errors),
-            'errors' => $this->errors,
-            'sanitized' => $this->sanitized
+            'valid' => empty($errors),
+            'sanitized' => $sanitized,
+            'errors' => $errors
         ];
-    }
-
-    private function sanitizePhone(string $phone): string
-    {
-        $cleanPhone = preg_replace('/[^\d+]/', '', trim($phone));
-        if (strlen($cleanPhone) > 12) {
-            $cleanPhone = substr($cleanPhone, 0, 12);
-        }
-        return $cleanPhone;
-    }
-
-    public function getErrors(): array
-    {
-        return $this->errors;
     }
 }
