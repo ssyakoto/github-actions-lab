@@ -1,3 +1,37 @@
+name: PHP CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  ci-test:
+    name: Проверка кода и тест БД
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: black_vantuz
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name:  Получение кода (Checkout)
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Установка PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo, pdo_mysql, mbstring
+          coverage: none
+
       - name: 🔍 Проверка синтаксиса PHP (Linting)
         run: |
           echo "🔍 Запуск проверки синтаксиса..."
@@ -5,7 +39,6 @@
           error_found=false
           
           for f in **/*.php; do
-            # Пропускаем папку vendor, если она вдруг попала
             if [[ "$f" == vendor/* ]]; then continue; fi
             
             output=$(php -l "$f" 2>&1)
@@ -21,3 +54,43 @@
           else
             echo "✅ Синтаксис в порядке"
           fi
+
+      - name: 🗄️ Запуск миграции БД (Тест создания таблиц)
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: black_vantuz
+          DB_USER: root
+          DB_PASS: root
+        run: |
+          sed -i "s/getenv('DB_HOST') ?: 'localhost'/getenv('DB_HOST') ?: '127.0.0.1'/g" Database.php
+          sed -i "s/getenv('DB_PORT') ?: '3306'/getenv('DB_PORT') ?: '3306'/g" Database.php
+          
+          php -r "
+          require 'Database.php';
+          \$sql = file_get_contents('migration.sql');
+          \$pdo = new PDO('mysql:host=127.0.0.1;port=3306;charset=utf8mb4', 'root', 'root');
+          \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          \$pdo->exec(\$sql);
+          echo '✅ Миграция успешно выполнена!';
+          "
+
+  cd-deploy:
+    name: Деплой на сервер
+    runs-on: ubuntu-latest
+    needs: ci-test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Получение кода
+        uses: actions/checkout@v4
+
+      - name: 🚀 Деплой по SSH (Пример)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            echo "Деплой выполнен"
