@@ -20,7 +20,8 @@ class ValidateRegisterData
         // 2. Email
         $email = trim($data['email'] ?? '');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Некорректный формат email';
+            // 👇 ВОТ ЗДЕСЬ ИСПРАВЛЕНИЕ: убрали слово "формат"
+            $errors[] = 'Некорректный email';
         } else {
             $sanitizedEmail = filter_var($email, FILTER_SANITIZE_EMAIL);
             $sanitized['email'] = $sanitizedEmail;
@@ -28,7 +29,7 @@ class ValidateRegisterData
             // Проверка уникальности, если передана модель
             if ($userModel && method_exists($userModel, 'findByEmail')) {
                 if ($userModel->findByEmail($sanitizedEmail)) {
-                       $errors[] = 'Некорректный email';
+                    $errors[] = 'Пользователь с таким email уже существует';
                 }
             }
         }
