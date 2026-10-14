@@ -1,5 +1,4 @@
 {
-    "name": "spin4spin/project",
     "require-dev": {
         "phpunit/phpunit": "^10.0"
     },
