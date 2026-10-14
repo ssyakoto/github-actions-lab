@@ -28,7 +28,7 @@ class ValidateRegisterData
             // Проверка уникальности, если передана модель
             if ($userModel && method_exists($userModel, 'findByEmail')) {
                 if ($userModel->findByEmail($sanitizedEmail)) {
-                    $errors[] = 'Пользователь с таким email уже существует';
+                       $errors[] = 'Некорректный email';
                 }
             }
         }
