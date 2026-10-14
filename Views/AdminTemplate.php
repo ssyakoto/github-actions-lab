@@ -687,11 +687,10 @@ class AdminTemplate extends BaseTemplate
     {
         $template = parent::getTemplate();
         $title = 'Добавить товар';
-        $content = self::getStyles() . '
+        $content = self::getStyles() . ',
         <div class="admin-sidebar">
             <div class="admin-logo">
-                <div class="admin-logo-icon">⚡</div>
-                <div class="admin-logo-text">spin4spin</div>
+                <<div class="admin-logo-text">spin4spin</div>
             </div>
             <ul class="admin-nav">
                 <li class="admin-nav-item"><a href="/admin" class="admin-nav-link"><span class="admin-nav-icon">📊</span><span class="admin-nav-text">Панель</span></a></li>
