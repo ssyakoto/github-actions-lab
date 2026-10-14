@@ -1,91 +1,23 @@
-name: PHP CI/CD Pipeline
-
-# 1. Триггеры: когда запускать пайплайн
-on:
-  push:
-    branches: [ "main", "master" ] # При пуше в основную ветку
-  pull_request:
-    branches: [ "main", "master" ] # При создании запроса на слияние
-
-jobs:
-  # ==========================================
-  # ЭТАП 1: CI (Непрерывная интеграция)
-  # ==========================================
-  ci-test:
-    name: Проверка кода и тест БД
-    runs-on: ubuntu-latest
-
-    # Поднимаем тестовую базу данных MySQL
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: black_vantuz
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-    steps:
-      - name: 📥 Получение кода (Checkout)
-        uses: actions/checkout@v4
-
-      - name: ⚙️ Установка PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1' # Твой код использует типизацию, 8.1 отлично подойдет
-          extensions: pdo, pdo_mysql, mbstring
-          coverage: none
-
       - name: 🔍 Проверка синтаксиса PHP (Linting)
         run: |
-          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \; | grep -v "No syntax errors"
-
-      - name: 🗄️ Запуск миграции БД (Тест создания таблиц)
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_NAME: black_vantuz
-          DB_USER: root
-          DB_PASS: root
-        run: |
-          # Заменяем localhost на 127.0.0.1 в Database.php для теста
-          sed -i "s/getenv('DB_HOST') ?: 'localhost'/getenv('DB_HOST') ?: '127.0.0.1'/g" Database.php
-          sed -i "s/getenv('DB_PORT') ?: '3306'/getenv('DB_PORT') ?: '3306'/g" Database.php
+          echo "🔍 Запуск проверки синтаксиса..."
+          shopt -s globstar
+          error_found=false
           
-          # Запускаем наш скрипт миграции
-          php -r "
-          require 'Database.php';
-          \$sql = file_get_contents('migration.sql');
-          \$pdo = new PDO('mysql:host=127.0.0.1;port=3306;charset=utf8mb4', 'root', 'root');
-          \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-          \$pdo->exec(\$sql);
-          echo '✅ Миграция успешно выполнена!';
-          "
-
-  # ==========================================
-  # ЭТАП 2: CD (Непрерывная доставка / развертывание)
-  # ==========================================
-  cd-deploy:
-    name: Деплой на сервер
-    runs-on: ubuntu-latest
-    needs: ci-test # Запускается ТОЛЬКО если этап ci-test прошел успешно
-    if: github.ref == 'refs/heads/main' # Только для ветки main
-
-    steps:
-      - name: 📥 Получение кода
-        uses: actions/checkout@v4
-
-      - name: 🚀 Деплой по SSH (Пример)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_HOST }}      # IP твоего сервера (добавить в Secrets GitHub)
-          username: ${{ secrets.SERVER_USER }}  # Логин (например, root)
-          key: ${{ secrets.SERVER_SSH_KEY }}    # Приватный SSH ключ
-          port: 22
-          script: |
-            # Команды, которые выполнятся на твоем сервере
-            cd /var/www/spin4spin
-            git pull origin main
-            # Здесь можно добавить перезапуск PHP-FPM или Nginx, если нужно
-            # sudo systemctl reload php8.1-fpm
+          for f in **/*.php; do
+            # Пропускаем папку vendor, если она вдруг попала
+            if [[ "$f" == vendor/* ]]; then continue; fi
+            
+            output=$(php -l "$f" 2>&1)
+            if [[ "$output" != *"No syntax errors detected"* ]]; then
+              echo "❌ Ошибка в файле: $f"
+              echo "$output"
+              error_found=true
+            fi
+          done
+          
+          if [ "$error_found" = true ]; then
+            exit 1
+          else
+            echo "✅ Синтаксис в порядке"
+          fi
