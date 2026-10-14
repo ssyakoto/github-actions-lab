@@ -1,0 +1,140 @@
+/* === Luxury Product Grid === */
+.product-grid-luxury {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin: 3rem 0;
+}
+
+.product-card-luxury {
+    background: #fff;
+    position: relative;
+    group: true;
+}
+
+.product-card-luxury__image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+    aspect-ratio: 3/4;
+    margin-bottom: 1rem;
+}
+
+.product-card-luxury__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.product-card-luxury:hover .product-card-luxury__image {
+    transform: scale(1.05);
+}
+
+.product-card-luxury__badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: var(--text-primary);
+    color: #fff;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: var(--radius);
+    z-index: 2;
+}
+
+.product-card-luxury__quick-actions {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.product-card-luxury:hover .product-card-luxury__quick-actions {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.product-card-luxury__quick-btn {
+    flex: 1;
+    padding: 0.625rem;
+    background: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.product-card-luxury__quick-btn:hover {
+    background: var(--text-primary);
+    color: #fff;
+}
+
+.product-card-luxury__brand {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+}
+
+.product-card-luxury__name {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.product-card-luxury__price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.product-card-luxury__price--old {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
+    margin-left: 0.5rem;
+    font-weight: 400;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .product-grid-luxury {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .product-grid-luxury {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .product-card-luxury__quick-actions {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .product-grid-luxury {
+        grid-template-columns: 1fr;
+    }
+}

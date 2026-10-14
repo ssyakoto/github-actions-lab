@@ -1,0 +1,112 @@
+@startuml
+title UML Class Diagram - Магазин одежды "spin4spin" (MVC)
+
+' === ЯДРО И БД ===
+class Database {
+  - static $instance
+  - $pdo
+  + static getInstance()
+  + getConnection()
+}
+
+' === МОДЕЛИ ===
+class User {
+  - int $id
+  - string $name, $email, $password, $phone
+  - enum $role
+  - bool $verified
+  + register()
+  + login()
+  + getByEmail()
+  + getByLogin()
+  + updateProfile()
+  + changePassword()
+}
+
+class Product {
+  - int $id
+  - string $name, $description, $image, $period, $coverage
+  - decimal $price
+  - json $features
+  + getAll()
+  + getById()
+  + addToCart()
+  + prepareData()
+}
+
+class Order {
+  - int $id
+  - string $order_id
+  - int $user_id
+  - decimal $total
+  - enum $status
+  - json $products
+  + create()
+  + getByUserId()
+  + updateStatus()
+}
+
+class Log {
+  - string $id
+  - datetime $timestamp
+  - string $user, $action, $ip
+  - json $details
+  + record()
+  + getLogs()
+  + autoRotate()
+}
+
+' === КОНТРОЛЛЕРЫ ===
+class AuthController { + register(), + login(), + logout() }
+class ProductController { + index(), + show() }
+class BasketController { + add(), + remove(), + view(), + calculateTotal() }
+class OrderController { + checkout(), + store(), + success() }
+class AdminController { + manageProducts(), + manageUsers(), + viewLogs() }
+class ProfileController { + index(), + update(), + history() }
+class VerificationController { + sendCode(), + verify() }
+
+' === РОУТЕР И ШАБЛОНЫ ===
+class Router { + route() }
+class BaseTemplate
+class AdminTemplate
+
+' === СВЯЗИ ===
+Database ..> PDO : <<использует>>
+User ..> Database : <<запросы>>
+Product ..> Database : <<запросы>>
+Order ..> Database : <<запросы>>
+Log ..> Database : <<запросы>>
+
+Router --> AuthController
+Router --> ProductController
+Router --> BasketController
+Router --> OrderController
+Router --> AdminController
+Router --> ProfileController
+Router --> VerificationController
+
+AuthController ..> User
+ProductController ..> Product
+BasketController ..> Product
+OrderController ..> Order
+OrderController ..> Log
+AdminController ..> Product
+AdminController ..> User
+AdminController ..> Log
+ProfileController ..> User
+ProfileController ..> Order
+VerificationController ..> User
+
+Controller *-- BaseTemplate : <<рендерит>>
+AdminController *-- AdminTemplate : <<рендерит>>
+
+note right of Database
+  Singleton паттерн
+  Настройки из .env
+end note
+
+note right of Log
+  Авто-ротация до 500 записей
+  Формат JSON для details
+end note
+@enduml

@@ -1,0 +1,21 @@
+{
+    "autoload": {
+        "psr-4": {
+            "Controllers\\": "Controllers/",
+            "Models\\": "Models/",
+            "Views\\": "Views/",
+            "Services\\": "src/Services/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "require-dev": {
+        "phpmetrics/phpmetrics": "^2.9"
+    }
+}
